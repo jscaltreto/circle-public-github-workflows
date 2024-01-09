@@ -84,7 +84,7 @@ jobs:
           echo "ASSETS_DIR=${ASSETS_DIR}" >> ${GITHUB_ENV}
 
           if [ -z "${TAG}" ]; then
-            TAG="release-$(date '+%Y-%m-%dT%H:%M:%S')"
+            TAG="release-$(date '+%Y-%m-%dT%H%M%S')"
           fi
           echo "tag=${TAG}" >> ${GITHUB_OUTPUT}
 
@@ -102,7 +102,7 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
               });
-              const fileName = `${context.repo.repo}-${process.env.RELEASE_TAG}-${context.sha}.spdx.json`;
+              const fileName = `${context.repo.repo}_${process.env.RELEASE_TAG}_${context.sha.substr(0,8)}.spdx.json`;
               fs.writeFileSync(path.join(process.env.ASSETS_DIR, fileName), JSON.stringify(sbomResp.data.sbom));
             } catch (err) {
               core.error(`Failed to export SBOM from Dependency Graph: ${err}`);
