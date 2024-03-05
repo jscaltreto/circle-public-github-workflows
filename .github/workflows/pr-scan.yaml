@@ -47,8 +47,13 @@ jobs:
           # install js-yaml and spdx-expression-parse
           npm i js-yaml spdx-expression-parse
 
+      - name: Checkout Source
+        uses: actions/checkout@v4
+        with:
+          path: ${{ env.SCAN_TEMP }}/src
+
       - name: Checkout Configs
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: circlefin/circle-public-github-workflows
           ref: stable
@@ -69,6 +74,7 @@ jobs:
             const spdxParse = require('spdx-expression-parse');
 
             const configsDir = path.join(process.env.SCAN_TEMP, 'scan', 'config', 'scan');
+            const srcDir = path.join(process.env.SCAN_TEMP, 'src');
 
             if (context.eventName.startsWith("pull_request")) {
               core.setOutput("is-pr", "true");
@@ -102,15 +108,17 @@ jobs:
               });
 
               let ignoredPackages = [];
+              const licenseIgnoreFile = path.join(srcDir, '.licenseignore');
               try {
-                ignoredPackages = fs.readFileSync('.licenseignore').toString('utf-8').split('\n').filter(l => l.startsWith('pkg:'));
+                ignoredPackages = fs.readFileSync(licenseIgnoreFile).toString('utf-8').split('\n').filter(l => l.startsWith('pkg:'));
               } catch (err) {
                 core.info(`Failed to read .licenseignore file: ${err}`);
               }
 
               let ignoredGhsas = [];
+              const ghsaIgnoreFile = path.join(srcDir, '.ghsaignore');
               try {
-                for ( ghsa of fs.readFileSync('.ghsaignore').toString('utf-8').split('\n').filter(l => l.startsWith('GHSA-')) ){
+                for ( ghsa of fs.readFileSync(ghsaIgnoreFile).toString('utf-8').split('\n').filter(l => l.startsWith('GHSA-')) ){
                   try {
                     const ghsaTokens = ghsa.split(/\s+/);
                     if ( len(ghsaTokens) !== 2 ) {
@@ -135,11 +143,13 @@ jobs:
                 'fail-on-scopes': ['runtime', 'development', 'unknown'],
                 'comment-summary-in-pr': 'always',
                 'allow-licenses': allowedLicenses,
-                'allow-dependencies-license': ignoredPackages,
+                'allow-dependencies-licenses': ignoredPackages,
                 'allow-ghsas': ignoredGhsas,
               }
               licenseCfgFile = path.join(process.env.RUNNER_TEMP, 'dep-review.yaml');
-              fs.writeFileSync(licenseCfgFile, yaml.dump(depReviewCfg));
+              const yamlConfig = yaml.dump(depReviewCfg);
+              core.debug(yamlConfig);
+              fs.writeFileSync(licenseCfgFile, yamlConfig);
             } catch (err) {
               core.error(`Failed to generate dependency review config file: ${err}`);
               core.setFailed(err);
