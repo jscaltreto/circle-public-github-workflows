@@ -117,13 +117,13 @@ jobs:
         if: steps.checkout.conclusion == 'success'
         run: git fetch origin ${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}
 
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
-          node-version: 14.x
+          node-version: 20.x
 
       - name: Install commitlint
         run: |
-          npm install -g @commitlint/cli @commitlint/config-conventional
+          npm install -g @commitlint/{cli,config-conventional}@^18.6.0
 
       - name: Configure commitlint
         uses: actions/github-script@v7
